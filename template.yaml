@@ -1,15 +1,15 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  hello_world
+  helloworld
 
   Sample SAM Template for hello_world
 
 Metadata:
   AWS::ServerlessRepo::Application:
-    Name: my-app
+    Name: hello-world-jdg
     Description: hello world
-    Author: user1
+    Author: david.gwartney@nlx.ai
     SpdxLicenseId: Apache-2.0
     LicenseUrl: LICENSE.txt
     ReadmeUrl: README.md
@@ -24,18 +24,48 @@ Globals:
     Timeout: 3
 
 Resources:
+
+  HelloWorldApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: HelloWorldAPI
+      StageName: Prod
+      Auth:
+        ApiKeyRequired: true # sets for all methods
+#        UsagePlan:
+#          CreateUsagePlan: SHARED
+#          UsagePlanName: hello_world
+
   HelloWorldFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
       CodeUri: hello_world/
       Handler: app.lambda_handler
-      Runtime: python3.6
+      Runtime: python3.9
       Events:
-        HelloWorld:
+        ApiEvent:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
-            Path: /hello
+            Auth:
+              ApiKeyRequired: true
             Method: get
+            Path: /hello
+            RestApiId: !Ref HelloWorldApi
+
+  GoodByeWorldFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: hello_world/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Events:
+        ApiEvent:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Method: get
+            Path: /goodbye
+            RestApiId:
+              Ref: HelloWorldApi
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
@@ -43,10 +73,4 @@ Outputs:
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   HelloWorldApi:
     Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-  HelloWorldFunction:
-    Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt HelloWorldFunction.Arn
-  HelloWorldFunctionIamRole:
-    Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt HelloWorldFunctionRole.Arn
+    Value: !Sub "https://${HelloWorldApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
